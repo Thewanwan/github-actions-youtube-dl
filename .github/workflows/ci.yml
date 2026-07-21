@@ -1,1 +1,33 @@
 name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install yt-dlp
+        run: |
+          curl -L https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp_linux -o ./bin/yt-dlp
+          chmod +x ./bin/yt-dlp
+
+      - name: Download media
+        run: |
+          git config --local user.email "justjavac@gmail.com"
+          git config --local user.name "mig"
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git pull --rebase
+          ./bin/yt-dlp --config-location config.txt
+          git add .
+          git diff --cached --quiet || git commit -m "download youtube video"
+          git push
